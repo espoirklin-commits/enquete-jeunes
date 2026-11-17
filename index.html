@@ -1,0 +1,42 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enquête jeunes – Rambouillet Territoires</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;margin:0;background:#f4f6f8;color:#1d2733}main{max-width:640px;margin:auto;padding:16px}
+.c{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 3px #0001}h1{font-size:1.4rem}label.o{display:block;padding:8px 0}
+select,textarea{width:100%;padding:10px;font:inherit;border:1px solid #bbb;border-radius:8px}button{background:#1f5fbf;color:#fff;border:0;border-radius:10px;padding:14px;font:inherit;width:100%}small{color:#556}.e{color:#b00020}</style></head><body><main>
+<h1>Ta vie de jeune sur notre territoire</h1>
+<div class="c"><p>Enquête <b>anonyme</b> (3 à 5 min) pour les <b>16-25 ans</b> de Rambouillet et de Rambouillet Territoires. Elle sert à connaître les besoins réels des jeunes avant de choisir une action, dans le cadre d'un projet « Yes You Can » de la Ville de Rambouillet. Il n'y a pas de bonne ou de mauvaise réponse.</p>
+<p><small><b>Données :</b> aucun nom, e-mail, téléphone ni adresse précise n'est demandé, et aucune adresse IP n'est utilisée pour te suivre. Les réponses sont consultées uniquement par le porteur du projet, Espoir (responsable de la collecte), utilisées pour analyser les besoins, puis supprimées après 3 mois. Comme tes réponses sont anonymes, nous ne pourrons pas retrouver les tiennes pour les modifier ou les supprimer après envoi. Pour toute question : espoirdegboe08@gmail.com. Si tu as 16 ou 17 ans : tu peux répondre, c'est anonyme et tu peux ignorer toute question ou choisir « Je préfère ne pas répondre ». Tu peux quitter la page à tout moment.</small></p></div>
+<form id="f"></form><p id="m"></p></main>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+const sb=createClient('https://bsbvvsibjllwnmzweyyw.supabase.co','sb_publishable_m0ceivDyGgHgNyTZmfPJXw_OnW1L6h9');
+const N='Je préfère ne pas répondre',A='Autre';
+const D=['Se déplacer (transports, mobilité)','Trouver un stage, un job ou une alternance','Trouver un logement','Argent / budget','Orientation, études, formation','Santé et bien-être (stress, moral)','Loisirs, sport, culture','Rencontrer des gens, se sentir intégré(e)','Démarches administratives, accès à l\'information','Accès au numérique / internet','Sécurité, discrimination, harcèlement','Aucune difficulté particulière',A];
+const Q=[
+['age','Ta tranche d\'âge','r',['16-17 ans','18-20 ans','21-25 ans',N]],
+['commune','Ta commune de résidence','s',['Rambouillet','Le Perray-en-Yvelines','Gazeran','Saint-Arnoult-en-Yvelines','Cernay-la-Ville','Auffargis','Sonchamp','Autre commune de Rambouillet Territoires',N]],
+['situation','Ta situation actuelle','r',['Études (lycée, supérieur)','Emploi','Alternance','Formation','Recherche d\'emploi',A,N]],
+['difficulties','Quelles difficultés rencontres-tu dans ta vie quotidienne ? (plusieurs choix possibles)','c',D],
+['top2','Parmi elles, lesquelles sont les 2 plus importantes pour toi ? (2 maximum)','t',[]],
+['impact','À quel point ces difficultés pèsent sur ton quotidien ?','r',['1 – Très peu','2','3','4','5 – Énormément']],
+['duration','Depuis combien de temps ?','r',['Moins de 3 mois','3 à 12 mois','Plus d\'un an',N]],
+['frequency','À quelle fréquence cela se présente ?','r',['Tous les jours','Chaque semaine','Chaque mois','Rarement',N]],
+['tried','Qu\'as-tu déjà essayé ?','c',['Rien pour l\'instant','Demandé à ma famille / mes proches','Contacté une structure (Mission locale, mairie, lycée, association…)','Cherché seul(e) sur internet',A,N]],
+['why_insufficient','Si ça n\'a pas suffi, pourquoi ?','c',['Je ne connais pas les solutions','Trop loin / pas accessible','Trop cher','Horaires ou délais inadaptés','Complexe ou peu clair','Pas adapté à ma situation','Ça a suffi / pas concerné(e)',A,N]],
+['useful','Qu\'est-ce qui t\'aiderait vraiment ?','c',['Information claire et centralisée','Accompagnement individuel','Atelier ou événement','Aide financière ou matérielle','Mise en relation (pros, jeunes, entreprises)','Espace ou lieu pour se retrouver','Solution de transport',A,N]],
+['free_improve','Si tu pouvais améliorer une seule chose dans la vie des jeunes sur notre territoire, que changerais-tu ?','x',[]],
+['free_idea','As-tu une idée d\'action concrète à proposer ? (facultatif)','x',[]]];
+const f=document.getElementById('f');
+Q.forEach(([k,l,t,o])=>{const d=document.createElement('div');d.className='c';d.dataset.k=k;
+d.innerHTML=`<b>${l}</b><div class="opts">${t=='s'?`<select name="${k}"><option value="">Choisir…</option>${o.map(v=>`<option>${v}</option>`).join('')}</select>`:t=='x'?`<textarea name="${k}" rows="3" maxlength="1500"></textarea><small>Évite de citer des noms de personnes.</small>`:t=='t'?'<small>Coche d\'abord tes difficultés ci-dessus.</small>':o.map(v=>`<label class="o"><input type="${t=='r'?'radio':'checkbox'}" name="${k}" value="${v}"> ${v}</label>`).join('')}</div>`;f.append(d)});
+f.insertAdjacentHTML('beforeend','<div class="c"><label class="o"><input type="checkbox" id="ok"> J\'ai lu l\'information ci-dessus et j\'accepte de répondre anonymement.</label></div><button>Envoyer</button>');
+const val=n=>[...f.querySelectorAll(`[name="${n}"]:checked`)].map(e=>e.value);
+f.addEventListener('change',e=>{if(e.target.name=='difficulties'){const sel=val('difficulties').filter(v=>v!='Aucune difficulté particulière');const box=f.querySelector('[data-k=top2] .opts');box.innerHTML=sel.length?sel.map(v=>`<label class="o"><input type="checkbox" name="top2" value="${v}"> ${v}</label>`).join(''):'<small>Coche d\'abord tes difficultés ci-dessus.</small>'}
+if(e.target.name=='top2'&&val('top2').length>2){e.target.checked=false}});
+f.onsubmit=async e=>{e.preventDefault();const m=document.getElementById('m');
+const one=n=>val(n)[0]||f.querySelector(`[name="${n}"]`)?.value||null;
+if(!f.querySelector('#ok').checked||!one('age')||!one('commune')||!one('situation')||!val('difficulties').length){m.innerHTML='<span class="e">Merci de répondre aux questions 1 à 4 et de cocher la case d\'information.</span>';return}
+const r={age:one('age'),commune:one('commune'),situation:one('situation'),difficulties:val('difficulties'),top2:val('top2'),impact:parseInt(one('impact'))||null,duration:one('duration'),frequency:one('frequency'),tried:val('tried'),why_insufficient:val('why_insufficient'),useful:val('useful'),free_improve:f.free_improve.value.trim()||null,free_idea:f.free_idea.value.trim()||null};
+const {error}=await sb.from('responses').insert(r,{returning:'minimal'});
+if(error){m.innerHTML='<span class="e">Erreur d\'envoi, réessaie plus tard.</span>'}else{f.remove();m.innerHTML='<div class="c"><b>Merci !</b> Ta réponse a bien été enregistrée.</div>'}};
+</script></body></html>

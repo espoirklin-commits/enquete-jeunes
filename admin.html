@@ -1,0 +1,59 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>Admin</title><style>body{font:15px/1.4 system-ui,sans-serif;margin:0;background:#f4f6f8;color:#1d2733}main{max-width:1100px;margin:auto;padding:12px}
+.c{background:#fff;border-radius:10px;padding:14px;margin:10px 0;overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #ddd;padding:6px;text-align:left;vertical-align:top}
+.b{background:#1f5fbf;height:12px;border-radius:3px;display:inline-block}button,input,select{font:inherit;padding:8px;margin:2px}button{background:#1f5fbf;color:#fff;border:0;border-radius:8px}.r{background:#b00020}.w{color:#8a5a00}</style></head><body><main>
+<div id="login" class="c"><h2>Connexion administrateur</h2><input id="em" type="email" placeholder="e-mail"><input id="pw" type="password" placeholder="mot de passe"><button onclick="login()">Se connecter</button><p id="err"></p></div>
+<div id="app" hidden></div></main>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+const sb=createClient('https://bsbvvsibjllwnmzweyyw.supabase.co','sb_publishable_m0ceivDyGgHgNyTZmfPJXw_OnW1L6h9');let ALL=[];
+/* Faisabilité : critères 1-5 (5 = plus facile), à ajuster selon ta connaissance locale. Ordre : coût, délai, compétences, partenaires, ressources matérielles, test à petite échelle */
+const NEEDS={
+'Se déplacer (transports, mobilité)':{f:[2,2,3,3,2,3],ex:'Réseau de bus, Mobilités Rambouillet Territoires, aides régionales',gap:'Horaires soirs/week-end, communes éloignées',act:'Covoiturage jeunes ou carte claire des aides et horaires, testé sur 1-2 communes',par:'Rambouillet Territoires, Île-de-France Mobilités, mairies'},
+'Trouver un stage, un job ou une alternance':{f:[4,3,3,4,5,4],ex:'Mission locale, Pôle emploi/France Travail, lycées',gap:'Accès aux entreprises locales, réseau',act:'Ateliers CV/entretien + mise en relation avec entreprises locales',par:'Mission locale, CCI, entreprises locales, lycées'},
+'Trouver un logement':{f:[2,1,2,3,2,2],ex:'CLLAJ, bailleurs sociaux, aides CAF',gap:'Offre rare et chère, méconnaissance des aides',act:'Permanence/guide d\'information sur les aides au logement jeunes',par:'CLLAJ, CAF, mairies, bailleurs'},
+'Argent / budget':{f:[4,4,3,4,5,5],ex:'Aides CAF, CCAS, associations',gap:'Information sur les droits',act:'Atelier budget et droits animé avec un partenaire',par:'CCAS, CAF, Point info jeunesse'},
+'Orientation, études, formation':{f:[4,4,3,5,5,5],ex:'Psy-EN, CIO, lycées, Mission locale',gap:'Accompagnement individuel, témoignages de pros',act:'Soirées métiers / témoignages d\'anciens',par:'Lycées, Mission locale, entreprises'},
+'Santé et bien-être (stress, moral)':{f:[3,3,1,3,4,3],ex:'Maison des adolescents, psychologues scolaires, médecins',gap:'Délais, coût, tabou',act:'Information et orientation vers l\'existant, ateliers avec professionnels (aucune prise en charge directe)',par:'Maison des adolescents, CCAS, professionnels de santé'},
+'Loisirs, sport, culture':{f:[4,4,4,5,4,5],ex:'Associations, équipements municipaux',gap:'Prix, horaires, méconnaissance',act:'Événement ou agenda commun des activités jeunes',par:'Associations, services jeunesse des mairies'},
+'Rencontrer des gens, se sentir intégré(e)':{f:[4,4,4,4,4,5],ex:'Associations, maisons de quartier',gap:'Lieux de rencontre pour les 18-25 ans',act:'Rencontres ponctuelles dans un lieu partenaire',par:'Mairies, associations, Point info jeunesse'},
+'Démarches administratives, accès à l\'information':{f:[5,4,4,4,5,5],ex:'Point info jeunesse, France Services',gap:'Information dispersée',act:'Guide/page claire et permanence ponctuelle',par:'France Services, PIJ, mairies'},
+'Accès au numérique / internet':{f:[3,3,3,4,3,4],ex:'France Services, médiathèques',gap:'Équipement, accompagnement',act:'Ateliers numériques en médiathèque',par:'Médiathèques, France Services'},
+'Sécurité, discrimination, harcèlement':{f:[3,3,1,3,4,3],ex:'Police municipale, associations d\'aide, lycées',gap:'Signalement, écoute',act:'Sensibilisation avec un partenaire spécialisé',par:'Associations spécialisées, lycées, mairies'}};
+const W={freq:{'Tous les jours':100,'Chaque semaine':70,'Chaque mois':40,'Rarement':10},dur:{'Plus d\'un an':100,'3 à 12 mois':60,'Moins de 3 mois':25}};
+const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+window.login=async()=>{const {error}=await sb.auth.signInWithPassword({email:em.value,password:pw.value});err.textContent=error?'Identifiants invalides':'';if(!error)init()};
+window.logout=async()=>{await sb.auth.signOut();location.reload()};
+async function init(){const {data,error}=await sb.from('responses').select('*').order('created_at',{ascending:false});
+if(error||!data){err.textContent='Accès refusé.';await sb.auth.signOut();return}ALL=data;login.hidden=true;app.hidden=false;render()}
+function flt(){const g=id=>document.getElementById(id)?.value||'';return ALL.filter(r=>(!g('fc')||r.commune==g('fc'))&&(!g('fa')||r.age==g('fa'))&&(!g('fs')||r.situation==g('fs')))}
+function cnt(rows,k,arr){const m={};rows.forEach(r=>(arr?r[k]:[r[k]]).forEach(v=>v&&(m[v]=(m[v]||0)+1)));return Object.entries(m).sort((a,b)=>b[1]-a[1])}
+function bars(e,t){const mx=e[0]?.[1]||1;return `<div class="c"><b>${t}</b><table>${e.map(([k,v])=>`<tr><td>${k}</td><td style="width:50%"><span class="b" style="width:${v/mx*100}%"></span> ${v}</td></tr>`).join('')}</table></div>`}
+function score(rows){const n=rows.length;return Object.keys(NEEDS).map(need=>{const R=rows.filter(r=>r.difficulties.includes(need));const c=R.length,p=R.filter(r=>r.top2.includes(need)).length;
+const share=n?c/n*100:0,top=n?p/n*100:0,imp=avg(R.filter(r=>r.impact).map(r=>(r.impact-1)*25)),fr=avg(R.map(r=>W.freq[r.frequency]).filter(x=>x!=null)),du=avg(R.map(r=>W.dur[r.duration]).filter(x=>x!=null));
+const ins=c?R.filter(r=>r.why_insufficient.some(w=>!w.startsWith('Ça a suffi')&&w!=='Je préfère ne pas répondre')||r.tried.includes('Rien pour l\'instant')).length/c*100:0;
+const urg=Math.round(.2*Math.min(100,share*2)+.15*Math.min(100,top*3)+.25*imp+.15*fr+.1*du+.15*ins);
+const fea=Math.round(avg(NEEDS[need].f)*20);return {need,c,p,urg,fea,imp,fr,du,ins,share,low:c<10}}).filter(s=>s.c>0).sort((a,b)=>b.urg-a.urg)}
+function themes(rows){const T={Transport:/bus|train|transport|voiture|permis|mobilit/i,Emploi:/emploi|job|stage|alternance|travail/i,Logement:/logement|loyer|appart/i,Loisirs:/sport|loisir|culture|activit|sortie/i,'Lieux/rencontres':/lieu|rencontre|retrouv|ami|isol/i,Santé:/santé|stress|psy|moral/i,Information:/inform|démarche|aide/i};const o={};rows.forEach(r=>[r.free_improve,r.free_idea].forEach(t=>{if(!t)return;let f=0;for(const k in T)if(T[k].test(t)){(o[k]=o[k]||[]).push(t);f=1}if(!f)(o['Autres']=o['Autres']||[]).push(t)}));return o}
+window.render=()=>{const rows=flt(),S=score(rows),n=rows.length;
+const sel=(id,k,cur)=>`<select id="${id}" onchange="render()"><option value="">${k}: tous</option>${[...new Set(ALL.map(r=>r[cur]))].map(v=>`<option ${document.getElementById(id)?.value==v?'selected':''}>${v}</option>`).join('')}</select>`;
+const fl=['fc','fa','fs'].map(i=>document.getElementById(i)?.value);
+app.innerHTML=`<div class="c"><b>${ALL.length} réponses</b> (${n} après filtres) ${sel('fc','Commune','commune')}${sel('fa','Âge','age')}${sel('fs','Situation','situation')}
+<button onclick="csv()">Exporter CSV</button><button onclick="purge()" class="r">Purger anciennes</button><button onclick="delAll()" class="r">Tout supprimer</button><button onclick="logout()">Déconnexion</button></div>
+${n<30?'<div class="c w">⚠ Moins de 30 réponses : résultats très fragiles. Un besoin cité par moins de 10 jeunes est signalé « données insuffisantes ».</div>':''}
+<div class="c"><b>Classement des besoins</b><br><small>Urgence /100 = 20% part de jeunes concernés + 15% besoin cité dans le top 2 + 25% impact moyen + 15% fréquence + 10% durée + 15% solutions insuffisantes. Faisabilité /100 = moyenne de 6 critères estimés (coût, délai, compétences, partenaires, matériel, test à petite échelle), à ajuster. Ce sont des aides à la décision, pas des diagnostics.</small>
+<table><tr><th>Besoin identifié</th><th>Réponses</th><th>Urgence /100</th><th>Faisabilité /100</th><th>Solutions existantes</th><th>Lacunes identifiées</th><th>Action envisageable</th></tr>
+${S.map(s=>`<tr><td>${s.need}${s.low?'<br><span class="w">données insuffisantes</span>':''}</td><td>${s.c} (top2 : ${s.p})</td><td>${s.urg}<br><small>impact ${Math.round(s.imp)}, fréq. ${Math.round(s.fr)}, durée ${Math.round(s.du)}, insuffisance ${Math.round(s.ins)}</small></td><td>${s.fea}</td><td>${NEEDS[s.need].ex}</td><td>${NEEDS[s.need].gap}${s.ins>=50?' <b>(confirmé : '+Math.round(s.ins)+'% jugent les solutions insuffisantes)</b>':''}</td><td>${NEEDS[s.need].act}</td></tr>`).join('')}</table></div>
+<div class="c"><b>Urgence × faisabilité élevées (≥60 les deux)</b><br>${S.filter(s=>s.urg>=60&&s.fea>=60).map(s=>s.need).join(', ')||'Aucun pour l\'instant'}</div>
+<div class="c"><b>Pistes d'action (4-8 semaines)</b>${S.slice(0,3).map(s=>`<p><b>${s.need}</b> : ${NEEDS[s.need].act}.<br>Justification : ${s.c}/${n} jeunes (${Math.round(s.share)}%), dont ${s.p} en priorité ; impact moyen ${(s.imp/25+1).toFixed(1)}/5. Urgence ${s.urg}, faisabilité ${s.fea}${s.low?' (données insuffisantes)':''}.<br>Partenaires : ${NEEDS[s.need].par}. Budget : à chiffrer selon l'action (le plus souvent faible pour une action ponctuelle). Test : un atelier ou événement pilote, puis bilan. Indicateurs : participants, satisfaction, suites données.<br><small>Avant de créer une structure, vérifier d'abord si un partenariat ou un dispositif existant suffit.</small></p>`).join('')}</div>
+${bars(cnt(rows,'age'),'Tranches d\'âge')}${bars(cnt(rows,'commune'),'Communes')}${bars(cnt(rows,'situation'),'Situations')}${bars(cnt(rows,'difficulties',1),'Difficultés signalées')}${bars(cnt(rows,'top2',1),'Priorités (top 2)')}${bars(cnt(rows,'useful',1),'Aides utiles')}
+<div class="c"><b>Réponses libres par thème</b>${Object.entries(themes(rows)).map(([k,v])=>`<p><b>${k} (${v.length})</b><br>${v.map(t=>'• '+t.replace(/</g,'&lt;')).join('<br>')}</p>`).join('')||'Aucune'}</div>
+<div class="c"><b>Réponses individuelles</b><table>${rows.map(r=>`<tr><td>${new Date(r.created_at).toLocaleDateString('fr')}</td><td>${r.age}, ${r.commune}, ${r.situation}</td><td>${r.difficulties.join('; ')}</td><td><button class="r" onclick="del('${r.id}')">Suppr.</button></td></tr>`).join('')}</table></div>`;
+['fc','fa','fs'].forEach((i,j)=>{if(fl[j])document.getElementById(i).value=fl[j]})};
+window.csv=()=>{const rows=flt(),h=Object.keys(ALL[0]||{});const q=v=>{v=Array.isArray(v)?v.join(' | '):(v??'');v=String(v);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'};
+const b=new Blob(['\ufeff'+[h.join(';'),...rows.map(r=>h.map(k=>q(r[k])).join(';'))].join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='reponses.csv';a.click()};
+window.del=async id=>{if(confirm('Supprimer cette réponse ?')){await sb.from('responses').delete().eq('id',id);init()}};
+window.delAll=async()=>{if(confirm('Supprimer TOUTES les réponses ? Irréversible.')){await sb.from('responses').delete().gte('created_at','1970-01-01');init()}};
+window.purge=async()=>{const d=parseInt(prompt('Supprimer les réponses de plus de combien de jours ?'));if(d>=0){const {data}=await sb.rpc('purge_older_than',{days:d});alert(data+' supprimée(s)');init()}};
+sb.auth.getSession().then(({data})=>data.session&&init());
+</script></body></html>
