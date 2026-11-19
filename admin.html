@@ -1,12 +1,12 @@
 <!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>Admin</title><style>body{font:15px/1.4 system-ui,sans-serif;margin:0;background:#f4f6f8;color:#1d2733}main{max-width:1100px;margin:auto;padding:12px}
 .c{background:#fff;border-radius:10px;padding:14px;margin:10px 0;overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #ddd;padding:6px;text-align:left;vertical-align:top}
-.b{background:#1f5fbf;height:12px;border-radius:3px;display:inline-block}button,input,select{font:inherit;padding:8px;margin:2px}button{background:#1f5fbf;color:#fff;border:0;border-radius:8px}.r{background:#b00020}.w{color:#8a5a00}</style></head><body><main>
+.b{background:#1f5fbf;height:12px;border-radius:3px;display:inline-block}button,input,select{font:inherit;padding:8px;margin:2px}button{background:#1f5fbf;color:#fff;border:0;border-radius:8px}.r{background:#b00020}.sm{color:#556;font-size:12px}.w{color:#8a5a00}</style></head><body><main>
 <div id="login" class="c"><h2>Connexion administrateur</h2><input id="em" type="email" placeholder="e-mail"><input id="pw" type="password" placeholder="mot de passe"><button onclick="login()">Se connecter</button><p id="err"></p></div>
 <div id="app" hidden></div></main>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
-const sb=createClient('https://bsbvvsibjllwnmzweyyw.supabase.co','sb_publishable_m0ceivDyGgHgNyTZmfPJXw_OnW1L6h9');let ALL=[];
+const sb=createClient('https://bsbvvsibjllwnmzweyyw.supabase.co','sb_publishable_m0ceivDyGgHgNyTZmfPJXw_OnW1L6h9');let ALL=[],VER=null,F={fc:'',fa:'',fs:''};
 /* Faisabilité : critères 1-5 (5 = plus facile), à ajuster selon ta connaissance locale. Ordre : coût, délai, compétences, partenaires, ressources matérielles, test à petite échelle */
 const NEEDS={
 'Se déplacer (transports, mobilité)':{f:[2,2,3,3,2,3],ex:'Réseau de bus, Mobilités Rambouillet Territoires, aides régionales',gap:'Horaires soirs/week-end, communes éloignées',act:'Covoiturage jeunes ou carte claire des aides et horaires, testé sur 1-2 communes',par:'Rambouillet Territoires, Île-de-France Mobilités, mairies'},
@@ -25,33 +25,70 @@ const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
 window.login=async()=>{const {error}=await sb.auth.signInWithPassword({email:em.value,password:pw.value});err.textContent=error?'Identifiants invalides':'';if(!error)init()};
 window.logout=async()=>{await sb.auth.signOut();location.reload()};
 async function init(){const {data,error}=await sb.from('responses').select('*').order('created_at',{ascending:false});
-if(error||!data){err.textContent='Accès refusé.';await sb.auth.signOut();return}ALL=data;login.hidden=true;app.hidden=false;render()}
-function flt(){const g=id=>document.getElementById(id)?.value||'';return ALL.filter(r=>(!g('fc')||r.commune==g('fc'))&&(!g('fa')||r.age==g('fa'))&&(!g('fs')||r.situation==g('fs')))}
-function cnt(rows,k,arr){const m={};rows.forEach(r=>(arr?r[k]:[r[k]]).forEach(v=>v&&(m[v]=(m[v]||0)+1)));return Object.entries(m).sort((a,b)=>b[1]-a[1])}
-function bars(e,t){const mx=e[0]?.[1]||1;return `<div class="c"><b>${t}</b><table>${e.map(([k,v])=>`<tr><td>${k}</td><td style="width:50%"><span class="b" style="width:${v/mx*100}%"></span> ${v}</td></tr>`).join('')}</table></div>`}
-function score(rows){const n=rows.length;return Object.keys(NEEDS).map(need=>{const R=rows.filter(r=>r.difficulties.includes(need));const c=R.length,p=R.filter(r=>r.top2.includes(need)).length;
+if(error||!data){err.textContent='Accès refusé.';await sb.auth.signOut();return}ALL=data;VER=VER||(ALL.some(r=>r.survey_version==='v2')?'v2':'v1');login.hidden=true;app.hidden=false;render()}
+function score(rows){const n=rows.length;return Object.keys(NEEDS).map(need=>{const R=rows.filter(r=>(r.difficulties||[]).includes(need));const c=R.length,p=R.filter(r=>(r.top2||[]).includes(need)).length;
 const share=n?c/n*100:0,top=n?p/n*100:0,imp=avg(R.filter(r=>r.impact).map(r=>(r.impact-1)*25)),fr=avg(R.map(r=>W.freq[r.frequency]).filter(x=>x!=null)),du=avg(R.map(r=>W.dur[r.duration]).filter(x=>x!=null));
-const ins=c?R.filter(r=>r.why_insufficient.some(w=>!w.startsWith('Ça a suffi')&&w!=='Je préfère ne pas répondre')||r.tried.includes('Rien pour l\'instant')).length/c*100:0;
+const ins=c?R.filter(r=>(r.why_insufficient||[]).some(w=>!w.startsWith('Ça a suffi')&&w!=='Je préfère ne pas répondre')||(r.tried||[]).includes('Rien pour l\'instant')).length/c*100:0;
 const urg=Math.round(.2*Math.min(100,share*2)+.15*Math.min(100,top*3)+.25*imp+.15*fr+.1*du+.15*ins);
 const fea=Math.round(avg(NEEDS[need].f)*20);return {need,c,p,urg,fea,imp,fr,du,ins,share,low:c<10}}).filter(s=>s.c>0).sort((a,b)=>b.urg-a.urg)}
 function themes(rows){const T={Transport:/bus|train|transport|voiture|permis|mobilit/i,Emploi:/emploi|job|stage|alternance|travail/i,Logement:/logement|loyer|appart/i,Loisirs:/sport|loisir|culture|activit|sortie/i,'Lieux/rencontres':/lieu|rencontre|retrouv|ami|isol/i,Santé:/santé|stress|psy|moral/i,Information:/inform|démarche|aide/i};const o={};rows.forEach(r=>[r.free_improve,r.free_idea].forEach(t=>{if(!t)return;let f=0;for(const k in T)if(T[k].test(t)){(o[k]=o[k]||[]).push(t);f=1}if(!f)(o['Autres']=o['Autres']||[]).push(t)}));return o}
-window.render=()=>{const rows=flt(),S=score(rows),n=rows.length;
-const sel=(id,k,cur)=>`<select id="${id}" onchange="render()"><option value="">${k}: tous</option>${[...new Set(ALL.map(r=>r[cur]))].map(v=>`<option ${document.getElementById(id)?.value==v?'selected':''}>${v}</option>`).join('')}</select>`;
-const fl=['fc','fa','fs'].map(i=>document.getElementById(i)?.value);
-app.innerHTML=`<div class="c"><b>${ALL.length} réponses</b> (${n} après filtres) ${sel('fc','Commune','commune')}${sel('fa','Âge','age')}${sel('fs','Situation','situation')}
-<button onclick="csv()">Exporter CSV</button><button onclick="purge()" class="r">Purger anciennes</button><button onclick="delAll()" class="r">Tout supprimer</button><button onclick="logout()">Déconnexion</button></div>
-${n<30?'<div class="c w">⚠ Moins de 30 réponses : résultats très fragiles. Un besoin cité par moins de 10 jeunes est signalé « données insuffisantes ».</div>':''}
+
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const ver=r=>r.survey_version||'v1';
+const base=()=>ALL.filter(r=>ver(r)===VER);
+function flt(){return base().filter(r=>(!F.fc||r.commune==F.fc)&&(!F.fa||r.age==F.fa)&&(!F.fs||r.situation==F.fs))}
+function cnt(rows,k,arr){const m={};rows.forEach(r=>(arr?(r[k]||[]):[r[k]]).forEach(v=>v&&(m[v]=(m[v]||0)+1)));return Object.entries(m).sort((a,b)=>b[1]-a[1])}
+function bars(e,t){const mx=e[0]?.[1]||1;return `<div class="c"><b>${esc(t)}</b><table>${e.map(([k,v])=>`<tr><td>${esc(k)}</td><td style="width:50%"><span class="b" style="width:${v/mx*100}%"></span> ${v}</td></tr>`).join('')}</table></div>`}
+/* ---- Questionnaire v2 : indicateurs sur les réponses réelles, base = personnes ayant répondu à la question ---- */
+const has=(r,k)=>Array.isArray(r[k])?r[k].length>0:(r[k]!=null&&r[k]!=='');
+function pb(rows,k,t,arr){const R=rows.filter(r=>has(r,k)),b=R.length;
+if(!b)return `<div class="c"><b>${esc(t)}</b><br><small>Aucune réponse pour l'instant.</small></div>`;
+return `<div class="c"><b>${esc(t)}</b> <span class="sm">(${b} réponse${b>1?'s':''})</span><table>${cnt(R,k,arr).map(([v,c])=>`<tr><td>${esc(v)}</td><td style="width:50%"><span class="b" style="width:${c/b*80}%"></span> ${c} (${Math.round(c/b*100)} %)</td></tr>`).join('')}</table></div>`}
+const share=(rows,k,vals)=>{const R=rows.filter(r=>has(r,k));return{n:R.length,c:R.filter(r=>vals.includes(r[k])).length}};
+const fmt=({n,c})=>n?`${Math.round(c/n*100)} % <span class="sm">(${c} sur ${n})</span>`:'<span class="sm">pas de réponse</span>';
+const IND=[['Savaient qu\u2019il existe des aides pour les 16-25 ans','knew_aids_exist',['Oui']],
+['Ont déjà bénéficié d\u2019une aide ou d\u2019un dispositif','benefited',['Oui']],
+['Ont déjà renoncé à une opportunité (méconnaissance ou accès)','renounced',['Oui, plusieurs fois','Oui, une fois']],
+['Ont déjà contacté une structure','contacted_structure',['Oui']],
+['Trouvent difficilement des informations fiables','info_findable',['Plutôt difficilement','Très difficilement']],
+['Trouveraient une plateforme locale utile (très ou plutôt)','portal_useful',['Très utile','Plutôt utile']],
+['Intéressés par un service de profil (très ou plutôt)','profile_interest',['Très intéressé(e)','Plutôt intéressé(e)']],
+['Intéressés par des alertes (très ou plutôt)','alerts_interest',['Très intéressé(e)','Plutôt intéressé(e)']]];
+const CH=[['age','Tranches d\u2019âge'],['commune','Communes'],['situation','Situations'],['concerns','Préoccupations',1],
+['info_sources','Où cherchent-ils l\u2019information ?',1],['knows_structures','Connaissance des structures du territoire'],['structures_known','Structures connues',1],['renounced','A déjà renoncé à une opportunité'],['info_findable','Facilité à trouver une information fiable'],
+['knew_aids_exist','Savait qu\u2019il existait des aides pour les 16-25 ans'],['aids_known','Aides dont l\u2019existence était connue',1],['benefited','A déjà bénéficié d\u2019une aide'],['no_benefit_reasons','Raisons du non-recours aux aides',1],
+['contacted_structure','A déjà contacté une structure'],['structures_contacted','Structures les plus sollicitées',1],['contact_reasons','Raisons du contact',1],['got_solution','Solution obtenue après contact'],
+['used_platforms','A déjà utilisé une plateforme ou un site'],['platforms_known','Plateformes connues ou utilisées',1],['platform_opinion','Avis sur les plateformes utilisées'],['search_difficulties','Difficultés rencontrées dans les démarches',1],
+['portal_useful','Plateforme locale : utilité perçue'],['profile_interest','Service de profil : intérêt'],['alerts_interest','Alertes : intérêt'],['priority_info','Informations à retrouver en priorité',1],['features','Fonctionnalités les plus utiles',1],['channels','Canaux préférés',1],['usage_frequency','Fréquence d\u2019usage envisagée']];
+const LBL=Object.fromEntries(CH.map(c=>[c[0],c[1]]));
+function txt(rows,k,t){const L=rows.map(r=>r[k]).filter(Boolean);return `<div class="c"><b>${esc(t)} (${L.length})</b>${L.length?'<br>'+L.map(x=>'• '+esc(x)).join('<br>'):'<br><small>Aucune</small>'}</div>`}
+function others(rows){const ks=Object.keys(ALL[0]||{}).filter(k=>k.endsWith('_other'));
+const o=ks.map(k=>[k,rows.map(r=>r[k]).filter(Boolean)]).filter(x=>x[1].length);
+return `<div class="c"><b>Précisions « Autre »</b>${o.length?o.map(([k,v])=>`<p><b>${esc(LBL[k.replace('_other','')]||k)} (${v.length})</b><br>${v.map(x=>'• '+esc(x)).join('<br>')}</p>`).join(''):'<br><small>Aucune</small>'}</div>`}
+function v2(rows,n){return `${n<30?'<div class="c w">⚠ Moins de 30 réponses : résultats indicatifs seulement, à ne pas généraliser à tous les jeunes du territoire.</div>':''}
+<div class="c"><b>Indicateurs clés</b><br><small>Part des personnes ayant répondu à la question (« Je ne sais pas » inclus). Réponses brutes, sans pondération ni redressement. Un intérêt déclaré n'est pas un usage réel : comparer avec la fréquence d'usage envisagée.</small><table><tr><th>Indicateur</th><th>Résultat</th></tr>${IND.map(([t,k,v])=>`<tr><td>${esc(t)}</td><td>${fmt(share(rows,k,v))}</td></tr>`).join('')}</table></div>
+${CH.map(([k,t,a])=>pb(rows,k,t,a)).join('')}
+${txt(rows,'platform_opinion_text','Ce qu\u2019ils pensent des plateformes utilisées')}${txt(rows,'free_missing','Ce qui manque aux jeunes pour accéder aux opportunités')}${txt(rows,'free_improve','Une seule chose à améliorer')}${txt(rows,'free_idea','Propositions et idées')}${others(rows)}`}
+function v1(rows,n){const S=score(rows);return `${n<30?'<div class="c w">⚠ Moins de 30 réponses : résultats très fragiles. Un besoin cité par moins de 10 jeunes est signalé « données insuffisantes ».</div>':''}
 <div class="c"><b>Classement des besoins</b><br><small>Urgence /100 = 20% part de jeunes concernés + 15% besoin cité dans le top 2 + 25% impact moyen + 15% fréquence + 10% durée + 15% solutions insuffisantes. Faisabilité /100 = moyenne de 6 critères estimés (coût, délai, compétences, partenaires, matériel, test à petite échelle), à ajuster. Ce sont des aides à la décision, pas des diagnostics.</small>
 <table><tr><th>Besoin identifié</th><th>Réponses</th><th>Urgence /100</th><th>Faisabilité /100</th><th>Solutions existantes</th><th>Lacunes identifiées</th><th>Action envisageable</th></tr>
 ${S.map(s=>`<tr><td>${s.need}${s.low?'<br><span class="w">données insuffisantes</span>':''}</td><td>${s.c} (top2 : ${s.p})</td><td>${s.urg}<br><small>impact ${Math.round(s.imp)}, fréq. ${Math.round(s.fr)}, durée ${Math.round(s.du)}, insuffisance ${Math.round(s.ins)}</small></td><td>${s.fea}</td><td>${NEEDS[s.need].ex}</td><td>${NEEDS[s.need].gap}${s.ins>=50?' <b>(confirmé : '+Math.round(s.ins)+'% jugent les solutions insuffisantes)</b>':''}</td><td>${NEEDS[s.need].act}</td></tr>`).join('')}</table></div>
 <div class="c"><b>Urgence × faisabilité élevées (≥60 les deux)</b><br>${S.filter(s=>s.urg>=60&&s.fea>=60).map(s=>s.need).join(', ')||'Aucun pour l\'instant'}</div>
 <div class="c"><b>Pistes d'action (4-8 semaines)</b>${S.slice(0,3).map(s=>`<p><b>${s.need}</b> : ${NEEDS[s.need].act}.<br>Justification : ${s.c}/${n} jeunes (${Math.round(s.share)}%), dont ${s.p} en priorité ; impact moyen ${(s.imp/25+1).toFixed(1)}/5. Urgence ${s.urg}, faisabilité ${s.fea}${s.low?' (données insuffisantes)':''}.<br>Partenaires : ${NEEDS[s.need].par}. Budget : à chiffrer selon l'action (le plus souvent faible pour une action ponctuelle). Test : un atelier ou événement pilote, puis bilan. Indicateurs : participants, satisfaction, suites données.<br><small>Avant de créer une structure, vérifier d'abord si un partenariat ou un dispositif existant suffit.</small></p>`).join('')}</div>
 ${bars(cnt(rows,'age'),'Tranches d\'âge')}${bars(cnt(rows,'commune'),'Communes')}${bars(cnt(rows,'situation'),'Situations')}${bars(cnt(rows,'difficulties',1),'Difficultés signalées')}${bars(cnt(rows,'top2',1),'Priorités (top 2)')}${bars(cnt(rows,'useful',1),'Aides utiles')}
-<div class="c"><b>Réponses libres par thème</b>${Object.entries(themes(rows)).map(([k,v])=>`<p><b>${k} (${v.length})</b><br>${v.map(t=>'• '+t.replace(/</g,'&lt;')).join('<br>')}</p>`).join('')||'Aucune'}</div>
-<div class="c"><b>Réponses individuelles</b><table>${rows.map(r=>`<tr><td>${new Date(r.created_at).toLocaleDateString('fr')}</td><td>${r.age}, ${r.commune}, ${r.situation}</td><td>${r.difficulties.join('; ')}</td><td><button class="r" onclick="del('${r.id}')">Suppr.</button></td></tr>`).join('')}</table></div>`;
-['fc','fa','fs'].forEach((i,j)=>{if(fl[j])document.getElementById(i).value=fl[j]})};
+<div class="c"><b>Réponses libres par thème</b>${Object.entries(themes(rows)).map(([k,v])=>`<p><b>${k} (${v.length})</b><br>${v.map(t=>'• '+esc(t)).join('<br>')}</p>`).join('')||'Aucune'}</div>`}
+function indiv(rows){return `<div class="c"><b>Réponses individuelles</b><table>${rows.map(r=>`<tr><td>${new Date(r.created_at).toLocaleDateString('fr')}</td><td>${esc(r.age)}, ${esc(r.commune)}, ${esc(r.situation)}</td><td>${esc(VER==='v1'?(r.difficulties||[]).join('; '):[r.renounced&&'Renoncé : '+r.renounced,r.portal_useful&&'Plateforme : '+r.portal_useful].filter(Boolean).join(' · '))}</td><td><button class="r dl" data-id="${esc(r.id)}">Suppr.</button></td></tr>`).join('')}</table></div>`}
+window.render=()=>{const rows=flt(),n=rows.length;
+const sel=(id,label,key)=>`<select id="${id}" data-f="${id}"><option value="">${label} : tous</option>${[...new Set(base().map(r=>r[key]).filter(Boolean))].sort().map(v=>`<option value="${esc(v)}" ${F[id]===v?'selected':''}>${esc(v)}</option>`).join('')}</select>`;
+const vs=`<select id="fv">${['v2','v1'].map(v=>`<option value="${v}" ${VER===v?'selected':''}>Questionnaire ${v==='v2'?'v2 (nouveau)':'v1 (ancien)'} : ${ALL.filter(r=>ver(r)===v).length}</option>`).join('')}</select>`;
+app.innerHTML=`<div class="c"><b>${ALL.length} réponses au total</b> (${n} affichées) ${vs}${sel('fc','Commune','commune')}${sel('fa','Âge','age')}${sel('fs','Situation','situation')}
+<button onclick="csv()">Exporter CSV</button><button onclick="purge()" class="r">Purger anciennes</button><button onclick="delAll()" class="r">Tout supprimer</button><button onclick="logout()">Déconnexion</button><br><small>Le questionnaire v1 (ancien) et le v2 (nouveau) ne posent pas les mêmes questions : leurs résultats ne se mélangent pas.</small></div>
+${VER==='v1'?v1(rows,n):v2(rows,n)}${indiv(rows)}`};
+app.addEventListener('change',e=>{const t=e.target;if(t.id==='fv'){VER=t.value;F={fc:'',fa:'',fs:''};render()}else if(t.dataset.f){F[t.dataset.f]=t.value;render()}});
+app.addEventListener('click',e=>{const b=e.target.closest('.dl');if(b)del(b.dataset.id)});
 window.csv=()=>{const rows=flt(),h=Object.keys(ALL[0]||{});const q=v=>{v=Array.isArray(v)?v.join(' | '):(v??'');v=String(v);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'};
-const b=new Blob(['\ufeff'+[h.join(';'),...rows.map(r=>h.map(k=>q(r[k])).join(';'))].join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='reponses.csv';a.click()};
+const val=(r,k)=>k==='created_at'&&r[k]?String(r[k]).slice(0,10):r[k];
+const b=new Blob(['\ufeff'+[h.join(';'),...rows.map(r=>h.map(k=>q(val(r,k))).join(';'))].join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='reponses_'+VER+'.csv';a.click()};
 window.del=async id=>{if(confirm('Supprimer cette réponse ?')){await sb.from('responses').delete().eq('id',id);init()}};
 window.delAll=async()=>{if(confirm('Supprimer TOUTES les réponses ? Irréversible.')){await sb.from('responses').delete().gte('created_at','1970-01-01');init()}};
 window.purge=async()=>{const d=parseInt(prompt('Supprimer les réponses de plus de combien de jours ?'));if(d>=0){const {data}=await sb.rpc('purge_older_than',{days:d});alert(data+' supprimée(s)');init()}};
