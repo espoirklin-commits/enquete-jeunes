@@ -1,42 +1,132 @@
 <!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Enquête jeunes – Rambouillet Territoires</title>
 <style>body{font:16px/1.5 system-ui,sans-serif;margin:0;background:#f4f6f8;color:#1d2733}main{max-width:640px;margin:auto;padding:16px}
-.c{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 3px #0001}h1{font-size:1.4rem}label.o{display:block;padding:8px 0}
-select,textarea{width:100%;padding:10px;font:inherit;border:1px solid #bbb;border-radius:8px}button{background:#1f5fbf;color:#fff;border:0;border-radius:10px;padding:14px;font:inherit;width:100%}small{color:#556}.e{color:#b00020}</style></head><body><main>
+.c{background:#fff;border-radius:12px;padding:16px;margin:12px 0;box-shadow:0 1px 3px #0001}h1{font-size:1.4rem}h2{font-size:1.15rem;margin:16px 0 4px}h2:focus{outline:none}
+label.o{display:flex;gap:10px;align-items:flex-start;padding:9px 0}label.o input{flex:none;width:20px;height:20px;margin:3px 0 0}
+select,textarea,input[type=text]{width:100%;box-sizing:border-box;padding:10px;font:inherit;border:1px solid #bbb;border-radius:8px}input[type=text]{margin-top:4px}
+fieldset{border:0;margin:12px 0;min-width:0}fieldset.c{margin:12px 0}legend{padding:0;margin-bottom:4px;font-weight:700}
+button{background:#1f5fbf;color:#fff;border:0;border-radius:10px;padding:14px;font:inherit;width:100%;cursor:pointer}button:disabled{opacity:.6;cursor:wait}
+button.s{background:#fff;color:#1f5fbf;border:1px solid #1f5fbf}
+small{color:#556}.e{color:#b00020;margin:8px 0 0}.rq{font-weight:400;color:#556;font-size:.85rem}
+#nav{display:flex;gap:10px;margin:12px 0}#nav .s{flex:0 0 36%}
+#pg{height:8px;background:#dde3ea;border-radius:99px;overflow:hidden}#pb{height:100%;width:0;background:#1f5fbf;border-radius:99px}
+#pl{margin:6px 0 0;color:#556;font-size:.9rem}details summary{cursor:pointer;color:#1f5fbf}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #1f5fbf;outline-offset:2px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:no-preference){#pb{transition:width .25s}}</style></head><body><main>
 <h1>Ta vie de jeune sur notre territoire</h1>
-<div class="c"><p>Enquête <b>anonyme</b> (3 à 5 min) pour les <b>16-25 ans</b> de Rambouillet et de Rambouillet Territoires. Elle sert à connaître les besoins réels des jeunes avant de choisir une action, dans le cadre d'un projet « Yes You Can » de la Ville de Rambouillet. Il n'y a pas de bonne ou de mauvaise réponse.</p>
-<p><small><b>Données :</b> aucun nom, e-mail, téléphone ni adresse précise n'est demandé, et aucune adresse IP n'est utilisée pour te suivre. Les réponses sont consultées uniquement par le porteur du projet, Espoir (responsable de la collecte), utilisées pour analyser les besoins, puis supprimées après 3 mois. Comme tes réponses sont anonymes, nous ne pourrons pas retrouver les tiennes pour les modifier ou les supprimer après envoi. Pour toute question : espoirdegboe08@gmail.com. Si tu as 16 ou 17 ans : tu peux répondre, c'est anonyme et tu peux ignorer toute question ou choisir « Je préfère ne pas répondre ». Tu peux quitter la page à tout moment.</small></p></div>
-<form id="f"></form><p id="m"></p></main>
+<div id="prog" hidden><div id="pg" role="progressbar" aria-label="Progression du questionnaire" aria-valuemin="1" aria-valuemax="6"><div id="pb"></div></div><p id="pl"></p></div>
+<div class="c" id="intro"><p>Enquête <b>anonyme</b> (5 à 7 min) pour les <b>16-25 ans</b> de Rambouillet et de Rambouillet Territoires. Elle sert à connaître les besoins réels des jeunes avant de choisir une action, dans le cadre d'un projet « Yes You Can » de la Ville de Rambouillet. Il n'y a pas de bonne ou de mauvaise réponse.</p>
+<p><small id="dn"><b>Données :</b> aucun nom, e-mail, téléphone ni adresse précise n'est demandé, et aucune adresse IP n'est utilisée pour te suivre. Les réponses sont consultées uniquement par le porteur du projet, Espoir (responsable de la collecte), utilisées pour analyser les besoins, puis supprimées après 3 mois. Comme tes réponses sont anonymes, nous ne pourrons pas retrouver les tiennes pour les modifier ou les supprimer après envoi. Pour toute question : espoirdegboe08@gmail.com. Si tu as 16 ou 17 ans : tu peux répondre, c'est anonyme et tu peux ignorer toute question ou choisir « Je préfère ne pas répondre ». Tu peux quitter la page à tout moment.</small></p></div>
+<form id="f" novalidate></form>
+<div id="nav" hidden><button type="button" class="s" id="prev">Précédent</button><button type="button" id="next">Suivant</button></div>
+<p id="m" aria-live="polite"></p></main>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 const sb=createClient('https://bsbvvsibjllwnmzweyyw.supabase.co','sb_publishable_m0ceivDyGgHgNyTZmfPJXw_OnW1L6h9');
-const N='Je préfère ne pas répondre',A='Autre';
-const D=['Se déplacer (transports, mobilité)','Trouver un stage, un job ou une alternance','Trouver un logement','Argent / budget','Orientation, études, formation','Santé et bien-être (stress, moral)','Loisirs, sport, culture','Rencontrer des gens, se sentir intégré(e)','Démarches administratives, accès à l\'information','Accès au numérique / internet','Sécurité, discrimination, harcèlement','Aucune difficulté particulière',A];
+const N='Je préfère ne pas répondre',A='Autre',NS='Je ne sais pas';
+/* Réponses qui s'excluent des autres dans une question à choix multiples */
+const X=new Set([N,NS,'Aucune','Aucun','Aucune en particulier','Aucune de ces aides','Aucune de ces fonctionnalités','Je ne sais pas où chercher','Je n’ai pas rencontré de difficulté particulière']);
+const S=['Ta situation','Comment trouves-tu les informations ?','Connais-tu les aides et les dispositifs ?','Tes expériences et les solutions déjà utilisées','Et si une plateforme locale existait ?','Ton avis compte'];
+const INTRO5='Nous réfléchissons à la création d’un portail numérique destiné aux jeunes de 16 à 25 ans de Rambouillet et des communes voisines. L’objectif serait de réunir les informations, aides, formations, emplois, événements et opportunités du territoire dans un même espace, avec la possibilité de découvrir des informations correspondant à sa situation et à ses besoins.';
+const C=['Études et orientation','Formation','Emploi et alternance','Stage','Financement et aides financières','Permis et mobilité','Logement et autonomie','Santé et accès aux droits','Développement d’un projet personnel','Vie sociale et loisirs'];
+const ST=['Mission Locale','Bureau Information Jeunesse (BIJ)','France Travail','CIO','CROUS','CAF','Services jeunesse de la mairie','Associations locales',A];
+const UT=['Très utile','Plutôt utile','Peu utile','Pas utile du tout',NS];
+const IN=['Très intéressé(e)','Plutôt intéressé(e)','Peu intéressé(e)','Pas du tout intéressé(e)',NS];
+const NEG=['Peu utile','Pas utile du tout','Peu intéressé(e)','Pas du tout intéressé(e)'];
+/* t: r = un seul choix, c = plusieurs choix, s = liste déroulante, x = texte libre. s = numéro d'étape (0 à 5). req = obligatoire. oth = champ « Autre ». show = condition d'affichage. */
 const Q=[
-['age','Ta tranche d\'âge','r',['16-17 ans','18-20 ans','21-25 ans',N]],
-['commune','Ta commune de résidence','s',['Rambouillet','Le Perray-en-Yvelines','Gazeran','Saint-Arnoult-en-Yvelines','Cernay-la-Ville','Auffargis','Sonchamp','Autre commune de Rambouillet Territoires',N]],
-['situation','Ta situation actuelle','r',['Études (lycée, supérieur)','Emploi','Alternance','Formation','Recherche d\'emploi',A,N]],
-['difficulties','Quelles difficultés rencontres-tu dans ta vie quotidienne ? (plusieurs choix possibles)','c',D],
-['top2','Parmi elles, lesquelles sont les 2 plus importantes pour toi ? (2 maximum)','t',[]],
-['impact','À quel point ces difficultés pèsent sur ton quotidien ?','r',['1 – Très peu','2','3','4','5 – Énormément']],
-['duration','Depuis combien de temps ?','r',['Moins de 3 mois','3 à 12 mois','Plus d\'un an',N]],
-['frequency','À quelle fréquence cela se présente ?','r',['Tous les jours','Chaque semaine','Chaque mois','Rarement',N]],
-['tried','Qu\'as-tu déjà essayé ?','c',['Rien pour l\'instant','Demandé à ma famille / mes proches','Contacté une structure (Mission locale, mairie, lycée, association…)','Cherché seul(e) sur internet',A,N]],
-['why_insufficient','Si ça n\'a pas suffi, pourquoi ?','c',['Je ne connais pas les solutions','Trop loin / pas accessible','Trop cher','Horaires ou délais inadaptés','Complexe ou peu clair','Pas adapté à ma situation','Ça a suffi / pas concerné(e)',A,N]],
-['useful','Qu\'est-ce qui t\'aiderait vraiment ?','c',['Information claire et centralisée','Accompagnement individuel','Atelier ou événement','Aide financière ou matérielle','Mise en relation (pros, jeunes, entreprises)','Espace ou lieu pour se retrouver','Solution de transport',A,N]],
-['free_improve','Si tu pouvais améliorer une seule chose dans la vie des jeunes sur notre territoire, que changerais-tu ?','x',[]],
-['free_idea','As-tu une idée d\'action concrète à proposer ? (facultatif)','x',[]]];
-const f=document.getElementById('f');
-Q.forEach(([k,l,t,o])=>{const d=document.createElement('div');d.className='c';d.dataset.k=k;
-d.innerHTML=`<b>${l}</b><div class="opts">${t=='s'?`<select name="${k}"><option value="">Choisir…</option>${o.map(v=>`<option>${v}</option>`).join('')}</select>`:t=='x'?`<textarea name="${k}" rows="3" maxlength="1500"></textarea><small>Évite de citer des noms de personnes.</small>`:t=='t'?'<small>Coche d\'abord tes difficultés ci-dessus.</small>':o.map(v=>`<label class="o"><input type="${t=='r'?'radio':'checkbox'}" name="${k}" value="${v}"> ${v}</label>`).join('')}</div>`;f.append(d)});
-f.insertAdjacentHTML('beforeend','<div class="c"><label class="o"><input type="checkbox" id="ok"> J\'ai lu l\'information ci-dessus et j\'accepte de répondre anonymement.</label></div><button>Envoyer</button>');
-const val=n=>[...f.querySelectorAll(`[name="${n}"]:checked`)].map(e=>e.value);
-f.addEventListener('change',e=>{if(e.target.name=='difficulties'){const sel=val('difficulties').filter(v=>v!='Aucune difficulté particulière');const box=f.querySelector('[data-k=top2] .opts');box.innerHTML=sel.length?sel.map(v=>`<label class="o"><input type="checkbox" name="top2" value="${v}"> ${v}</label>`).join(''):'<small>Coche d\'abord tes difficultés ci-dessus.</small>'}
-if(e.target.name=='top2'&&val('top2').length>2){e.target.checked=false}});
-f.onsubmit=async e=>{e.preventDefault();const m=document.getElementById('m');
-const one=n=>val(n)[0]||f.querySelector(`[name="${n}"]`)?.value||null;
-if(!f.querySelector('#ok').checked||!one('age')||!one('commune')||!one('situation')||!val('difficulties').length){m.innerHTML='<span class="e">Merci de répondre aux questions 1 à 4 et de cocher la case d\'information.</span>';return}
-const r={age:one('age'),commune:one('commune'),situation:one('situation'),difficulties:val('difficulties'),top2:val('top2'),impact:parseInt(one('impact'))||null,duration:one('duration'),frequency:one('frequency'),tried:val('tried'),why_insufficient:val('why_insufficient'),useful:val('useful'),free_improve:f.free_improve.value.trim()||null,free_idea:f.free_idea.value.trim()||null};
-const {error}=await sb.from('responses').insert(r,{returning:'minimal'});
-if(error){m.innerHTML='<span class="e">Erreur d\'envoi, réessaie plus tard.</span>'}else{f.remove();m.innerHTML='<div class="c"><b>Merci !</b> Ta réponse a bien été enregistrée.</div>'}};
+{k:'age',s:0,t:'r',req:1,l:'Ta tranche d’âge',o:['16-17 ans','18-20 ans','21-25 ans',N]},
+{k:'commune',s:0,t:'s',req:1,l:'Ta commune de résidence',o:['Rambouillet','Le Perray-en-Yvelines','Gazeran','Saint-Arnoult-en-Yvelines','Cernay-la-Ville','Auffargis','Sonchamp','Autre commune de Rambouillet Territoires','En dehors de Rambouillet Territoires',N]},
+{k:'situation',s:0,t:'r',req:1,oth:1,l:'Quelle est ta situation actuelle ?',o:['Lycéen(ne)','Étudiant(e)','En formation','En alternance','En recherche d’emploi','En emploi','Sans emploi et sans formation','En service civique',A,N]},
+{k:'concerns',s:0,t:'c',req:1,oth:1,l:'Aujourd’hui, quelles sont tes principales préoccupations ?',h:'Plusieurs choix possibles.',o:[...C,'Aucune en particulier',A,N]},
+
+{k:'info_sources',s:1,t:'c',oth:1,l:'Lorsque tu recherches une information concernant ton avenir, tes droits ou les opportunités destinées aux jeunes, où vas-tu chercher ?',h:'Plusieurs choix possibles.',o:['Moteurs de recherche (Google…)','Réseaux sociaux (Instagram, TikTok, Snapchat…)','Ma famille, mes proches','Mes amis','Mon établissement (professeurs, CPE, conseillers…)','Une structure jeunesse (Mission Locale, BIJ, CIO…)','La mairie ou son site internet','Une association','Des sites officiels (service-public.fr, 1jeune1solution…)','Un assistant IA (ChatGPT…)','Je ne sais pas où chercher',A,N]},
+{k:'knows_structures',s:1,t:'r',l:'Connais-tu les structures qui accompagnent les jeunes sur ton territoire ?',o:['Oui, plusieurs','Oui, quelques-unes','Non, aucune',NS]},
+{k:'structures_known',s:1,t:'c',oth:1,l:'Quelles structures connais-tu ?',h:'Plusieurs choix possibles.',o:[...ST,'Aucune'],show:g=>g('knows_structures')!=='Non, aucune'},
+{k:'renounced',s:1,t:'r',l:'As-tu déjà renoncé à une opportunité parce que tu ne savais pas qu’elle existait ou comment y accéder ?',o:['Oui, plusieurs fois','Oui, une fois','Non, jamais',NS]},
+{k:'info_findable',s:1,t:'r',l:'Trouves-tu facilement des informations fiables et adaptées à ta situation ?',o:['Très facilement','Plutôt facilement','Plutôt difficilement','Très difficilement',NS]},
+
+{k:'knew_aids_exist',s:2,t:'r',l:'Savais-tu qu’il existait des aides et dispositifs spécifiquement destinés aux jeunes de 16 à 25 ans ?',o:['Oui','Non',NS]},
+{k:'aids_known',s:2,t:'c',l:'Avant de répondre à ce questionnaire, savais-tu qu’il pouvait exister des aides concernant :',h:'Coche celles dont tu connaissais l’existence.',o:['Le permis de conduire','Les transports et la mobilité','Le logement','Les études et les formations','La recherche d’emploi','La création d’entreprise','La santé','Les activités culturelles et sportives','Les voyages et la mobilité internationale','Les projets associatifs et citoyens','Aucune de ces aides']},
+{k:'benefited',s:2,t:'r',l:'As-tu déjà bénéficié d’une aide ou d’un dispositif destiné aux jeunes ?',o:['Oui','Non',NS]},
+{k:'no_benefit_reasons',s:2,t:'c',oth:1,l:'Pourquoi n’en as-tu pas bénéficié ?',h:'Plusieurs choix possibles.',o:['Je ne connaissais pas leur existence','Je ne savais pas où chercher','Je ne savais pas si j’étais éligible','Les démarches étaient trop compliquées','Je ne savais pas qui contacter','Je ne remplissais pas les conditions','Je n’en avais pas besoin',A],show:g=>g('benefited')==='Non'},
+
+{k:'contacted_structure',s:3,t:'r',l:'As-tu déjà contacté une structure pour obtenir des informations ou un accompagnement ?',o:['Oui','Non',N]},
+{k:'structures_contacted',s:3,t:'c',oth:1,l:'Laquelle ou lesquelles ?',h:'Plusieurs choix possibles.',o:ST,show:g=>g('contacted_structure')==='Oui'},
+{k:'contact_reasons',s:3,t:'c',oth:1,l:'Pour quelle raison as-tu contacté cette structure ?',h:'Plusieurs choix possibles.',o:[...C,A],show:g=>g('contacted_structure')==='Oui'},
+{k:'got_solution',s:3,t:'r',l:'As-tu obtenu une réponse ou une solution adaptée à ta situation ?',o:['Oui, tout à fait','Oui, en partie','Non, pas vraiment','Pas encore (démarche en cours)',NS],show:g=>g('contacted_structure')==='Oui'},
+{k:'used_platforms',s:3,t:'r',l:'As-tu déjà utilisé des plateformes ou sites internet pour rechercher des aides, des formations, des emplois ou des opportunités ?',o:['Oui','Non',NS]},
+{k:'platforms_known',s:3,t:'c',oth:1,l:'Lesquels connais-tu ou as-tu déjà utilisés ?',h:'Plusieurs choix possibles.',o:['La Boussole des jeunes','1jeune1solution','Les sites de la Mission Locale','Les sites de la CAF','Les sites du CROUS','Les sites des collectivités',A,'Aucun']},
+{k:'platform_opinion',s:3,t:'r',l:'Qu’en as-tu pensé ?',o:['Très utiles','Assez utiles','Peu utiles','Pas du tout utiles',NS],show:g=>g('used_platforms')==='Oui'},
+{k:'platform_opinion_text',s:3,t:'x',l:'Qu’est-ce qui t’a plu ou manqué ? (facultatif)',show:g=>g('used_platforms')==='Oui'},
+{k:'search_difficulties',s:3,t:'c',oth:1,l:'Quelles difficultés as-tu rencontrées dans tes recherches ou tes démarches ?',h:'Plusieurs choix possibles.',o:['Je ne savais pas par où commencer','Trop d’informations, difficile de faire le tri','Informations pas à jour ou contradictoires','Informations pas adaptées à ma situation','Démarches trop compliquées ou trop de papiers','Je ne savais pas si j’étais éligible','Délais trop longs ou pas de réponse','Difficile de joindre quelqu’un','Difficile de me déplacer sur place','Je n’ai pas rencontré de difficulté particulière',A]},
+
+{k:'portal_useful',s:4,t:'r',l:'Trouverais-tu utile d’avoir une plateforme regroupant ces informations locales ?',o:UT},
+{k:'profile_interest',s:4,t:'r',l:'Serais-tu intéressé(e) par un service qui te permettrait de renseigner ton profil et tes besoins afin de découvrir les opportunités susceptibles de te correspondre ?',o:IN},
+{k:'alerts_interest',s:4,t:'r',l:'Aimerais-tu recevoir des alertes lorsqu’une nouvelle aide, une formation, une offre d’emploi ou une opportunité correspondant à tes critères est publiée ?',o:IN},
+{k:'priority_info',s:4,t:'c',oth:1,max:3,l:'Quelles informations souhaiterais-tu retrouver en priorité ?',h:'3 choix maximum.',o:['Aides financières','Formations et études','Emploi, stages et alternance','Logement','Permis et mobilité','Santé et accès aux droits','Événements et activités','Projets associatifs et engagement','Démarches administratives',A]},
+{k:'features',s:4,t:'c',oth:1,l:'Quelles fonctionnalités seraient les plus utiles ?',h:'Plusieurs choix possibles.',o:['Recherche par besoin','Informations personnalisées selon mon profil','Alertes sur les nouvelles opportunités','Calendrier des événements','Explications sur les conditions d’éligibilité','Informations sur les démarches et justificatifs','Contacts directs des structures','Espace pour proposer un projet','Espace pour participer à des consultations locales',A,'Aucune de ces fonctionnalités'],show:g=>!(NEG.includes(g('portal_useful'))&&NEG.includes(g('profile_interest'))&&NEG.includes(g('alerts_interest')))},
+{k:'channels',s:4,t:'c',l:'Comment préférerais-tu consulter ces informations ?',h:'Plusieurs choix possibles.',o:['Site internet','Application mobile','Notifications','E-mail','Réseaux sociaux',NS],show:g=>!(NEG.includes(g('portal_useful'))&&NEG.includes(g('profile_interest'))&&NEG.includes(g('alerts_interest')))},
+{k:'usage_frequency',s:4,t:'r',l:'À quelle fréquence utiliserais-tu une telle plateforme ?',o:['Tous les jours','Plusieurs fois par semaine','Environ une fois par semaine','Quelques fois par mois','Rarement','Jamais',NS],show:g=>!(NEG.includes(g('portal_useful'))&&NEG.includes(g('profile_interest'))&&NEG.includes(g('alerts_interest')))},
+
+{k:'free_missing',s:5,t:'x',l:'Selon toi, qu’est-ce qui manque aujourd’hui aux jeunes de Rambouillet et des environs pour accéder plus facilement aux opportunités ? (facultatif)'},
+{k:'free_improve',s:5,t:'x',l:'Si tu pouvais améliorer une seule chose concernant l’information, les aides ou l’accompagnement des jeunes sur ton territoire, que changerais-tu ? (facultatif)'},
+{k:'free_idea',s:5,t:'x',l:'As-tu une proposition ou une idée que tu aimerais partager ? (facultatif)'}];
+
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const f=document.getElementById('f'),m=document.getElementById('m'),nx=document.getElementById('next'),pv=document.getElementById('prev');
+const qs=Object.fromEntries(Q.map(q=>[q.k,q]));
+/* Construction des étapes et des questions */
+S.forEach((t,i)=>{const s=document.createElement('section');s.className='step';s.dataset.s=i;s.hidden=true;
+s.innerHTML=`<h2 tabindex="-1">${esc(t)}</h2>`+(i==4?`<div class="c"><p>${esc(INTRO5)}</p></div>`:'');f.append(s)});
+Q.forEach(q=>{const d=document.createElement(q.t=='r'||q.t=='c'?'fieldset':'div');d.className='c';d.dataset.k=q.k;
+const req=q.req?' <span class="rq">(obligatoire)</span>':'',hint=q.h?`<small>${esc(q.h)}</small>`:'';let h;
+if(q.t=='s')h=`<label for="q_${q.k}"><b>${esc(q.l)}</b>${req}</label><select id="q_${q.k}" name="${q.k}"><option value="">Choisir…</option>${q.o.map(v=>`<option>${esc(v)}</option>`).join('')}</select>`;
+else if(q.t=='x')h=`<label for="q_${q.k}"><b>${esc(q.l)}</b></label><textarea id="q_${q.k}" name="${q.k}" rows="3" maxlength="1500"></textarea><small>Évite de citer des noms de personnes.</small>`;
+else h=`<legend>${esc(q.l)}${req}</legend>${hint}`+q.o.map(v=>`<label class="o"><input type="${q.t=='r'?'radio':'checkbox'}" name="${q.k}" value="${esc(v)}"><span>${esc(v)}</span></label>`).join('');
+if(q.oth)h+=`<input type="text" name="${q.k}_other" maxlength="100" placeholder="Précise (facultatif)" aria-label="Précise ta réponse « Autre »" hidden>`;
+d.innerHTML=h;f.querySelector(`[data-s="${q.s}"]`).append(d)});
+f.querySelector('[data-s="5"]').insertAdjacentHTML('beforeend','<details class="c"><summary>Relire l’information sur les données</summary><p><small>'+document.getElementById('dn').innerHTML+'</small></p></details><div class="c" data-k="consent"><label class="o"><input type="checkbox" id="ok"><span>J\'ai lu l\'information sur les données et j\'accepte de répondre anonymement.</span></label></div>');
+
+/* Lecture des réponses et affichage conditionnel */
+const raw=k=>{const q=qs[k];if(q.t=='r')return f.querySelector(`[name="${k}"]:checked`)?.value??null;
+if(q.t=='c')return[...f.querySelectorAll(`[name="${k}"]:checked`)].map(e=>e.value);return(f.querySelector(`[name="${k}"]`).value||'').trim()||null};
+let vis={};const get=k=>vis[k]?raw(k):null;
+function refresh(){vis={};Q.forEach(q=>{vis[q.k]=!q.show||!!q.show(get);f.querySelector(`[data-k="${q.k}"]`).hidden=!vis[q.k];
+if(q.oth){const v=raw(q.k),on=q.t=='r'?v===A:(v||[]).includes(A);f.querySelector(`[name="${q.k}_other"]`).hidden=!(on&&vis[q.k])}})}
+
+/* Navigation et progression */
+let cur=0;const last=S.length-1;
+function go(i,first){cur=i;f.querySelectorAll('.step').forEach((s,j)=>s.hidden=j!=i);document.getElementById('intro').hidden=i!=0;
+document.getElementById('prog').hidden=false;document.getElementById('nav').hidden=false;
+document.getElementById('pb').style.width=((i+1)/S.length*100)+'%';document.getElementById('pg').setAttribute('aria-valuenow',i+1);
+const r=last-i;document.getElementById('pl').textContent=`Étape ${i+1} sur ${S.length}`+(r?` · il en reste ${r}`:' · dernière étape');
+pv.hidden=i==0;nx.textContent=i==last?'Envoyer':'Suivant';m.textContent='';if(!first){window.scrollTo(0,0);f.querySelector(`[data-s="${i}"] h2`).focus()}}
+function check(i){let first=null;Q.filter(q=>q.s==i&&q.req&&vis[q.k]).forEach(q=>{const v=raw(q.k),el=f.querySelector(`[data-k="${q.k}"]`);el.querySelector('.e')?.remove();
+if(!(Array.isArray(v)?v.length:v)){el.insertAdjacentHTML('beforeend','<p class="e" role="alert">Réponds à cette question pour continuer.</p>');first=first||el}});
+if(first){first.scrollIntoView({block:'center'});(first.querySelector('input,select')||first).focus()}return!first}
+f.addEventListener('change',e=>{const t=e.target,q=qs[t.name];
+if(q&&q.t=='c'){if(t.checked){if(X.has(t.value))f.querySelectorAll(`[name="${q.k}"]:checked`).forEach(c=>{if(c!==t)c.checked=false});
+else f.querySelectorAll(`[name="${q.k}"]:checked`).forEach(c=>{if(X.has(c.value))c.checked=false});
+if(q.max&&raw(q.k).length>q.max)t.checked=false}}
+if(q)f.querySelector(`[data-k="${q.k}"] .e`)?.remove();refresh()});
+f.addEventListener('submit',e=>e.preventDefault());
+pv.onclick=()=>go(cur-1);
+nx.onclick=()=>{if(cur<last){if(check(cur))go(cur+1);return}send()};
+
+/* Envoi : seules les questions affichées sont enregistrées */
+async function send(){
+if(!check(cur))return;
+if(!f.querySelector('#ok').checked){m.innerHTML='<span class="e">Coche la case d\'information pour envoyer tes réponses.</span>';return}
+const r={survey_version:'v2'};
+Q.forEach(q=>{if(!vis[q.k])return;let v=raw(q.k);if(Array.isArray(v)&&!v.length)v=null;r[q.k]=v;
+if(q.oth){const o=(f.querySelector(`[name="${q.k}_other"]`).value||'').trim(),on=q.t=='r'?v===A:(v||[]).includes(A);r[q.k+'_other']=on&&o?o:null}});
+if(get('knows_structures')==='Non, aucune')r.structures_known=['Aucune'];
+nx.disabled=pv.disabled=true;m.textContent='Envoi en cours…';
+try{const {error}=await sb.from('responses').insert(r,{returning:'minimal'});if(error)throw error;
+f.remove();document.getElementById('nav').remove();document.getElementById('prog').remove();document.getElementById('intro').remove();
+m.innerHTML='<div class="c"><b>Merci !</b> Ta réponse a bien été enregistrée.</div>';window.scrollTo(0,0)}
+catch(err){console.error(err);m.innerHTML='<span class="e">Erreur d\'envoi, réessaie plus tard.</span>';nx.disabled=pv.disabled=false}}
+refresh();go(0,1);
 </script></body></html>
